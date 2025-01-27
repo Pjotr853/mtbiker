@@ -1,11 +1,11 @@
 ## príprava prostredia na prácu s PHP a databázou##
-*problém: neviem čo je potrebné pre pácu s PHP a pripojenie k databáze
+*problém: neviem čo je potrebné pre prácu s PHP a pripojenie k databáze
 1. Inštalácia: XAMPP
 2. Vývojové prostredie: VS Code
 3. Vytvorenie HelloWorld.php 
 4. Zobrazenie v prehliadači cez http://localhost/HelloWorld.php
 5. Vytvorenie pracovného prostredia kde budem pracovať na zadaní mtbiker/mtbiker.php
-6. Kedže nepoznám syntax našiel som si jednoduchý kód na W3School a spustil http://localhost/mtbiker/mtbiker.php
+6. Keďže nepoznám syntax našiel som si jednoduchý kód na W3School a spustil http://localhost/mtbiker/mtbiker.php
 7. Prostredie pre písanie scriptu mám pripravené
 
 ## Vytvorenie databázy v http://localhost/phpmyadmin
@@ -28,16 +28,16 @@
 3. Na adrese http://localhost/mtbiker/mtbiker.php vidím, že údaje sa mi zobrazujú tak ako som chcel
 
 ## Práca s databázou
-* Zadanie je zamerané na to aby som vytiaho niečo zaujímavé, anomálie,... z databázy. Presuvám sa do http://localhost/phpmyadmin kde budem písať SQL príkazy
-1. Pri výpise databázy vidím, že niektoré user_id a order_id sa opakujú, napíšem SELECT ktorý spočíta počet zákupených produktov avšak neberie do úvahy quntity. 
+* Zadanie je zamerané na to aby som vytiahol niečo zaujímavé, anomálie,... z databázy. Presúvam sa do http://localhost/phpmyadmin kde budem písať SQL príkazy
+1. Pri výpise databázy vidím, že niektoré user_id a order_id sa opakujú, napíšem SELECT ktorý spočíta počet zakúpených produktov avšak neberie do úvahy quntity. 
 SELECT user_id, COUNT(*) AS row_count
 FROM order_products_data
 GROUP BY user_id
 ORDER BY row_count DESC;
-    - dostal som z toho, že dvaja useri 168523 a 266926 zaznamenali najvaic položiek v nákupoch (6402), (4396), traja useri presiahli hodnotu 1000 položiek
-2. Zo zvedavosti pozirem či týto dvaja minuly aj najviac PRICE na nákupoch, zmením SELECT user_id, SUM(price)
+    - dostal som z toho, že dvaja useri 168523 a 266926 zaznamenali najviac položiek v nákupoch (6402), (4396), traja useri presiahli hodnotu 1000 položiek
+2. Zo zvedavosti pozirem či títo dvaja minuli aj najviac PRICE na nákupoch, zmením SELECT user_id, SUM(price)
     - user 103540 minul 229254.6894 eur, user 168523 minul 174204.1701 eur, 266926 minul 141520.0220 eur
-    - zmením príkaz z prvého bodu na SUM(quantity), a vidím že najvaic položiek nakúpil 266926(22104), 168523(14100), 433240(9515) 
+    - zmením príkaz z prvého bodu na SUM(quantity), a vidím že najviac položiek nakúpil 266926(22104), 168523(14100), 433240(9515) 
 3. Zistenie najpredávanejšieho tovaru 
     -SELECT 
         product_id, 
@@ -56,7 +56,7 @@ ORDER BY row_count DESC;
         FROM_UNIXTIME(time) + INTERVAL 1 HOUR AS readable_time
     FROM order_products_data  
     ORDER BY `readable_time` ASC;
-6. z tohto času zistím v ktorých mesiacoch boli najväčšie pradaje 
+6. z tohto času zistím v ktorých mesiacoch boli najväčšie predaje 
     SELECT 
         DATE_FORMAT(FROM_UNIXTIME(time), '%Y-%m') AS month, 
         SUM(quantity) AS total_sold_quantity                    
