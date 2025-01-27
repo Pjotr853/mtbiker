@@ -1,0 +1,108 @@
+## príprava prostredia na prácu s PHP a databázou##
+*problém: neviem čo je potrebné pre pácu s PHP a pripojenie k databáze
+1. Inštalácia: XAMPP
+2. Vývojové prostredie: VS Code
+3. Vytvorenie HelloWorld.php 
+4. Zobrazenie v prehliadači cez http://localhost/HelloWorld.php
+5. Vytvorenie pracovného prostredia kde budem pracovať na zadaní mtbiker/mtbiker.php
+6. Kedže nepoznám syntax našiel som si jednoduchý kód na W3School a spustil http://localhost/mtbiker/mtbiker.php
+7. Prostredie pre písanie scriptu mám pripravené
+
+## Vytvorenie databázy v http://localhost/phpmyadmin
+*problém: nikdy som nepracoval s takým množstvom údajov, neviem ako získať dáta zo súboru, neviem ich vypísať
+1. V XAMPP Control Panel spustím MySQL
+2. Spustím http://localhost/phpmyadmin
+3. Vytvorím novú databázu: mtbiker, importujem súbor order_products_data.sql
+4. V štruktúre mtbiker vidím, že pribudla nová položka a databáza vyzerá že obsahuje dáta zo súboru
+
+## Zobrazenie záznamov z databázy v mtbiker.php
+* problém: nepoznám syntax a neviem ako dostať a vypísať dáta z databázy
+1. Pomocou ChatGPT si vygenerujem snipet kódu ktorý by mal dokázať načítať a zobraziť dáta
+2. Dostal som vygenerovaný kód, z ktorého som vyčítal 
+    -pripojenie na databázu cez new mysqli 
+    -overenie pripojenia cez if if ($conn->connect_error)
+    -SELECT a jeho zápis ktorý poznám rozumiem mu
+    -kontrola či moj SELECT získal údaje if ($result->num_rows > 0)
+    -výpis údajov pomocou ciklu while 
+    -ukončenie pripojenia s databázou
+3. Na adrese http://localhost/mtbiker/mtbiker.php vidím, že údaje sa mi zobrazujú tak ako som chcel
+
+## Práca s databázou
+* Zadanie je zamerané na to aby som vytiaho niečo zaujímavé, anomálie,... z databázy. Presuvám sa do http://localhost/phpmyadmin kde budem písať SQL príkazy
+1. Pri výpise databázy vidím, že niektoré user_id a order_id sa opakujú, napíšem SELECT ktorý spočíta počet zákupených produktov avšak neberie do úvahy quntity. 
+SELECT user_id, COUNT(*) AS row_count
+FROM order_products_data
+GROUP BY user_id
+ORDER BY row_count DESC;
+    - dostal som z toho, že dvaja useri 168523 a 266926 zaznamenali najvaic položiek v nákupoch (6402), (4396), traja useri presiahli hodnotu 1000 položiek
+2. Zo zvedavosti pozirem či týto dvaja minuly aj najviac PRICE na nákupoch, zmením SELECT user_id, SUM(price)
+    - user 103540 minul 229254.6894 eur, user 168523 minul 174204.1701 eur, 266926 minul 141520.0220 eur
+    - zmením príkaz z prvého bodu na SUM(quantity), a vidím že najvaic položiek nakúpil 266926(22104), 168523(14100), 433240(9515) 
+3. Zistenie najpredávanejšieho tovaru 
+    -SELECT 
+        product_id, 
+        SUM(quantity) AS total_quantity   
+    FROM order_products_data
+    GROUP BY product_id 
+    ORDER BY total_quantity DESC;
+    - z tohto SELECTU som zistil, že napredávanejší tovar je 126342, ktorý sa predal sa v počte 50843 kusov, pričom druhý produkt je 187084 s počtom 19284 kusov.
+4. Najdrahší produkt 270644 stál 8332.5000 eur od používateľa 2288626
+5. preloženie času do zrozumiteľného formátu
+    SELECT 
+        order_id, 
+        product_id, 
+        quantity, 
+        price, 
+        FROM_UNIXTIME(time) + INTERVAL 1 HOUR AS readable_time
+    FROM order_products_data  
+    ORDER BY `readable_time` ASC;
+6. z tohto času zistím v ktorých mesiacoch boli najväčšie pradaje 
+    SELECT 
+        DATE_FORMAT(FROM_UNIXTIME(time), '%Y-%m') AS month, 
+        SUM(quantity) AS total_sold_quantity                    
+    FROM order_products_data
+    GROUP BY month                                           
+    ORDER BY month;                                          
+    - z toho som zistil že najväčší predaj produktov bol v máji 2021(107005) a apríli 2021(103817). 
+7. Pri prezeraní dát som narazil na veľký rozsah cien a veľmi veľa položiek v hodnote 0 eur 
+    -rozhodol som spočítať počet položiek v určitých cenových rozsahoch
+    SELECT
+        SUM(CASE WHEN price = 0 THEN quantity ELSE 0 END) AS quantity_price_0,
+        SUM(CASE WHEN price > 0 AND price <= 1 THEN quantity ELSE 0 END) AS quantity_price_0_to_1,
+        SUM(CASE WHEN price > 1 AND price <= 10 THEN quantity ELSE 0 END) AS quantity_price_1_to_10,
+        SUM(CASE WHEN price > 10 AND price <= 100 THEN quantity ELSE 0 END) AS quantity_price_10_to_100,
+        SUM(CASE WHEN price > 100 AND price <= 1000 THEN quantity ELSE 0 END) AS quantity_price_100_to_1000,
+        SUM(CASE WHEN price > 1000 AND price <= 10000 THEN quantity ELSE 0 END) AS quantity_price_1000_to_10000,
+        SUM(CASE WHEN price > 10000 THEN quantity ELSE 0 END) AS quantity_price_above_10000
+    FROM order_products_data;
+    - okrem počtu by sa tu dalo pridať aj zarobenú sumu a rozšíriť  tento SELECT
+    SELECT
+        SUM(CASE WHEN price = 0 THEN quantity ELSE 0 END) AS quantity_price_0,
+        SUM(CASE WHEN price = 0 THEN price * quantity ELSE 0 END) AS total_sales_price_0,
+
+        SUM(CASE WHEN price > 0 AND price <= 1 THEN quantity ELSE 0 END) AS quantity_price_0_to_1,
+        SUM(CASE WHEN price > 0 AND price <= 1 THEN price * quantity ELSE 0 END) AS total_sales_price_0_to_1,
+
+        SUM(CASE WHEN price > 1 AND price <= 10 THEN quantity ELSE 0 END) AS quantity_price_1_to_10,
+        SUM(CASE WHEN price > 1 AND price <= 10 THEN price * quantity ELSE 0 END) AS total_sales_price_1_to_10,
+
+        SUM(CASE WHEN price > 10 AND price <= 100 THEN quantity ELSE 0 END) AS quantity_price_10_to_100,
+        SUM(CASE WHEN price > 10 AND price <= 100 THEN price * quantity ELSE 0 END) AS total_sales_price_10_to_100,
+
+        SUM(CASE WHEN price > 100 AND price <= 1000 THEN quantity ELSE 0 END) AS quantity_price_100_to_1000,
+        SUM(CASE WHEN price > 100 AND price <= 1000 THEN price * quantity ELSE 0 END) AS total_sales_price_100_to_1000,
+
+        SUM(CASE WHEN price > 1000 AND price <= 10000 THEN quantity ELSE 0 END) AS quantity_price_1000_to_10000,
+        SUM(CASE WHEN price > 1000 AND price <= 10000 THEN price * quantity ELSE 0 END) AS total_sales_price_1000_to_10000,
+
+        SUM(CASE WHEN price > 10000 THEN quantity ELSE 0 END) AS quantity_price_above_10000,
+        SUM(CASE WHEN price > 10000 THEN price * quantity ELSE 0 END) AS total_sales_price_above_10000
+    FROM order_products_data;
+    -tento select sa mi páči, aplikujem ho do scriptu, mýslím si že je zaujímavy a hovorí o tom ktoré položky v akej cenovej relácii sú najpredávanejšie a aký maju výnos
+ 
+ ##Zápis  SELECTU  do php
+ 1. Na ukladanie dát zo SELECT-u využijem .csv
+
+
+
+
